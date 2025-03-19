@@ -1,0 +1,125 @@
+entity-relationship-diagram
+
+title Instagram
+typeface mono
+colorMode pastel
+styleMode plain
+notation crows-foot
+
+// STRUCTURE
+users [icon: users] {
+  id SERIAL pk
+  username VARCHAR(100)
+  name VARCHAR(100)
+  bio VARCHAR(400)
+  avatar VARCHAR(255)
+  phone VARCHAR(25)
+  email VARCHAR(255)
+  password VARCHAR(255)
+  status VARCHAR(15) // enums
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+}
+
+followers [icon: handshake] {
+  id SERIAL pk
+  follower_id INTEGER
+  user_id INTEGER
+}
+
+posts [icon: image] {
+  id SERIAL pk
+  user_id INTEGER
+  url TEXT
+  caption TEXT
+  lat REAL
+  lng REAL
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+}
+
+comments [icon: comments] {
+  id SERIAL pk
+  comment VARCHAR(400)
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+}
+
+likes [icon: heart]{
+  id SERIAL pk
+  user_id INTEGER
+  post_id INTEGER
+  comment_id INTEGER
+  created_at TIMESTAMP
+}
+
+photo_tags [icon: tag]{
+  id SERIAL pk
+  user_id INTEGER
+  post_id INTEGER
+  x REAL
+  y REAL
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+}
+
+caption_tags[icon: tag] {
+  id SERIAL pk
+  user_id INTEGER
+  post_id INTEGER
+  created_at TIMESTAMP
+  updated_at TIMESTAMP
+}
+
+hashtags [icon: hash]{
+  id SERIAL pk
+  title VARCHAR(255)
+  created_at TIMESTAMP
+}
+
+hashtags_posts[icon: hash] {
+  id SERIAL pk
+  hashtag_id INTEGER
+  post_id INTEGER
+}
+
+hashtags_comments [icon: hash] {
+  id SERIAL pk
+  hashtag_id INTEGER
+  comment_id INTEGER
+}
+
+hashtags_users [icon: hash] {
+  id SERIAL pk
+  hashtag_id INTEGER
+  user_id INTEGER
+}
+
+//  RELATIONS
+posts.user_id > users.id
+
+comments.user_id > users.id
+comments.post_id > posts.id
+
+likes.user_id <> users.id
+likes.post_id <> posts.id
+likes.comment_id <> comments.id
+
+photo_tags.user_id <> users.id
+photo_tags.post_id <> posts.id
+
+caption_tags.user_id <> users.id
+caption_tags.post_id <> posts.id
+
+hashtags_posts.hashtag_id <> hashtags.id
+hashtags_posts.post_id <> posts.id 
+
+hashtags_comments.hashtag_id <> hashtags.id
+hashtags_comments.comment_id  <> comments.id 
+
+hashtags_users.hashtag_id <> hashtags.id
+hashtags_users.user_id <> users.id 
+
+followers.follower_id <> users.id
+followers.user_id <> users.id
+
