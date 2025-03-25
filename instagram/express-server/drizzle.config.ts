@@ -6,7 +6,7 @@ export default defineConfig({
 	},
 	dialect: "postgresql",
 	casing: "snake_case",
-	schema: "./src/db/schema",
+	schema: "./src/db/schema.ts",
 	out: "./src/db",
 	schemaFilter: "public",
 	introspect: {

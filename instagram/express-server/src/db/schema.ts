@@ -5,6 +5,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	pgEnum,
 	pgMaterializedView,
 	pgTable,
 	pgView,
@@ -16,23 +17,64 @@ import {
 	varchar,
 } from "drizzle-orm/pg-core";
 
+export const userStatus = pgEnum("user_status", ["active", "inactive"]);
+
+export const users = pgTable(
+	"users",
+	{
+		id: serial().primaryKey().notNull(),
+		createdAt: timestamp({
+			withTimezone: true,
+			mode: "string",
+		})
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp({
+			withTimezone: true,
+			mode: "string",
+		})
+			.defaultNow()
+			.notNull(),
+		username: varchar({ length: 30 }).notNull().unique(),
+		bio: varchar({ length: 400 }),
+		avatar: varchar({ length: 200 }),
+		phone: varchar({ length: 25 }),
+		email: varchar({ length: 40 }).unique(),
+		password: varchar({ length: 50 }),
+		status: userStatus().default("active"),
+	},
+	(table) => [
+		index("users_username_idx").using(
+			"btree",
+			table.username.asc().nullsLast().op("text_ops"),
+		),
+		check("users_check", sql`COALESCE(phone, email) IS NOT NULL`),
+	],
+);
+
 export const posts = pgTable(
 	"posts",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		updatedAt: timestamp("updated_at", {
+		})
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
+		})
+			.defaultNow()
+			.notNull(),
 		url: varchar({ length: 200 }).notNull(),
 		caption: varchar({ length: 240 }),
 		lat: real(),
 		lng: real(),
-		userId: integer("user_id").notNull(),
+		userId: integer()
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -55,12 +97,18 @@ export const captionTags = pgTable(
 	"caption_tags",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		userId: integer("user_id").notNull(),
-		postId: integer("post_id").notNull(),
+		})
+			.defaultNow()
+			.notNull(),
+		userId: integer()
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		postId: integer()
+			.notNull()
+			.references(() => posts.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -77,50 +125,29 @@ export const captionTags = pgTable(
 	],
 );
 
-export const users = pgTable(
-	"users",
-	{
-		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
-			withTimezone: true,
-			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		updatedAt: timestamp("updated_at", {
-			withTimezone: true,
-			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		username: varchar({ length: 30 }).notNull(),
-		bio: varchar({ length: 400 }),
-		avatar: varchar({ length: 200 }),
-		phone: varchar({ length: 25 }),
-		email: varchar({ length: 40 }),
-		password: varchar({ length: 50 }),
-		status: varchar({ length: 15 }),
-	},
-	(table) => [
-		index("users_username_idx").using(
-			"btree",
-			table.username.asc().nullsLast().op("text_ops"),
-		),
-		check("users_check", sql`COALESCE(phone, email) IS NOT NULL`),
-	],
-);
-
 export const comments = pgTable(
 	"comments",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		updatedAt: timestamp("updated_at", {
+		})
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
+		})
+			.defaultNow()
+			.notNull(),
 		contents: varchar({ length: 240 }).notNull(),
-		userId: integer("user_id").notNull(),
-		postId: integer("post_id").notNull(),
+		userId: integer()
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		postId: integer()
+			.notNull()
+			.references(() => posts.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -140,12 +167,18 @@ export const followers = pgTable(
 	"followers",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		leaderId: integer("leader_id").notNull(),
-		followerId: integer("follower_id").notNull(),
+		})
+			.defaultNow()
+			.notNull(),
+		leaderId: integer("leader_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		followerId: integer("follower_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -169,11 +202,13 @@ export const hashtags = pgTable(
 	"hashtags",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		title: varchar({ length: 20 }).notNull(),
+		})
+			.defaultNow()
+			.notNull(),
+		title: varchar({ length: 20 }).notNull().unique(),
 	},
 	(table) => [unique("hashtags_title_key").on(table.title)],
 );
@@ -182,8 +217,12 @@ export const hashtagsPosts = pgTable(
 	"hashtags_posts",
 	{
 		id: serial().primaryKey().notNull(),
-		hashtagId: integer("hashtag_id").notNull(),
-		postId: integer("post_id").notNull(),
+		hashtagId: integer("hashtag_id")
+			.notNull()
+			.references(() => hashtags.id, { onDelete: "cascade" }),
+		postId: integer("post_id")
+			.notNull()
+			.references(() => posts.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -207,13 +246,17 @@ export const likes = pgTable(
 	"likes",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		userId: integer("user_id").notNull(),
-		postId: integer("post_id"),
-		commentId: integer("comment_id"),
+		})
+			.defaultNow()
+			.notNull(),
+		userId: integer()
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		postId: integer().references(() => posts.id, { onDelete: "cascade" }),
+		commentId: integer().references(() => comments.id, { onDelete: "cascade" }),
 	},
 	(table) => [
 		foreignKey({
@@ -247,16 +290,24 @@ export const photoTags = pgTable(
 	"photo_tags",
 	{
 		id: serial().primaryKey().notNull(),
-		createdAt: timestamp("created_at", {
+		createdAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		updatedAt: timestamp("updated_at", {
+		})
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp({
 			withTimezone: true,
 			mode: "string",
-		}).default(sql`CURRENT_TIMESTAMP`),
-		userId: integer("user_id").notNull(),
-		postId: integer("post_id").notNull(),
+		})
+			.defaultNow()
+			.notNull(),
+		userId: integer()
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		postId: integer()
+			.notNull()
+			.references(() => posts.id, { onDelete: "cascade" }),
 		x: integer().notNull(),
 		y: integer().notNull(),
 	},
@@ -277,32 +328,53 @@ export const photoTags = pgTable(
 export const weeklyLikes = pgMaterializedView("weekly_likes", {
 	week: timestamp({ withTimezone: true, mode: "string" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	postsLikes: bigint("posts_likes", { mode: "number" }),
+	postsLikes: bigint({ mode: "number" }),
 	// You can use { mode: "bigint" } if numbers are exceeding js number limitations
-	commentsLikes: bigint("comments_likes", { mode: "number" }),
+	commentsLikes: bigint({ mode: "number" }),
 }).as(
 	sql`SELECT date_trunc('week'::text, COALESCE(p.created_at, c.created_at)) AS week, count(p.id) AS posts_likes, count(c.id) AS comments_likes FROM likes l LEFT JOIN posts p ON p.id = l.post_id LEFT JOIN comments c ON l.comment_id = c.id GROUP BY (date_trunc('week'::text, COALESCE(p.created_at, c.created_at))) ORDER BY (date_trunc('week'::text, COALESCE(p.created_at, c.created_at)))`,
 );
 
 export const tags = pgView("tags", {
-	id: integer(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }),
-	userId: integer("user_id"),
-	postId: integer("post_id"),
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({
+		withTimezone: true,
+		mode: "string",
+	})
+		.defaultNow()
+		.notNull(),
+	userId: integer()
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+	postId: integer()
+		.notNull()
+		.references(() => posts.id, { onDelete: "cascade" }),
 	type: text(),
 }).as(
 	sql`SELECT photo_tags.id, photo_tags.created_at, photo_tags.user_id, photo_tags.post_id, 'photo'::text AS type FROM photo_tags UNION ALL SELECT caption_tags.id, caption_tags.created_at, caption_tags.user_id, caption_tags.post_id, 'caption'::text AS type FROM caption_tags`,
 );
 
 export const recentPosts = pgView("recent_posts", {
-	id: integer(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" }),
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp({
+		withTimezone: true,
+		mode: "string",
+	})
+		.defaultNow()
+		.notNull(),
+	updatedAt: timestamp({
+		withTimezone: true,
+		mode: "string",
+	})
+		.defaultNow()
+		.notNull(),
 	url: varchar({ length: 200 }),
 	caption: varchar({ length: 240 }),
 	lat: real(),
 	lng: real(),
-	userId: integer("user_id"),
+	userId: integer()
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
 }).as(
 	sql`SELECT id, created_at, updated_at, url, caption, lat, lng, user_id FROM posts ORDER BY created_at DESC LIMIT 15`,
 );

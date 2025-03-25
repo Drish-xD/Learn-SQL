@@ -8,6 +8,20 @@
       "when": 1742941822438,
       "tag": "0000_empty_whirlwind",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742943120578,
+      "tag": "0001_cold_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1742943315440,
+      "tag": "0002_glorious_namor",
+      "breakpoints": true
     }
   ]
 }
