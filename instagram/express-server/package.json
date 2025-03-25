@@ -1,0 +1,19 @@
+{
+	"name": "express-server",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --hot src/index.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/express": "^5.0.1"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"express": "^4.21.2",
+		"pg": "^8.14.1"
+	}
+}
