@@ -1,7 +1,11 @@
-import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import * as schema from "./schema";
 
-const pool = new Pool({
-  connectionString: Bun.env.DATABASE_URL,
+export const db = drizzle(Bun.env.DATABASE_URL ?? "", {
+	schema,
+	casing: "snake_case",
 });
 
-export default pool;
+export type DB = typeof db;
+
+export default db;
